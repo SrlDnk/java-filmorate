@@ -18,6 +18,7 @@ public class FilmControllerTest {
     void setUp() {
         controller = new FilmController();
     }
+
     private Film createValidFilm() {
         Film film = new Film();
         film.setName("Интерстеллар");
