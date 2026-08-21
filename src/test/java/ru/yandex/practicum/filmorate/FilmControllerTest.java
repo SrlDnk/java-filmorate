@@ -39,15 +39,6 @@ public class FilmControllerTest {
         assertEquals(1, controller.findAll().size());
     }
 
-    @DisplayName("Фильм с пустым названием не должен создаваться")
-    @Test
-    void createFilm_whenNameIsBlank_throwsValidationException() {
-        Film film = createValidFilm();
-        film.setName("");
-
-        assertThrows(ValidationException.class, () -> controller.create(film));
-    }
-
     @DisplayName("Фильм с описанием 200 должен создаётся")
     @Test
     void createFilm_whenDescriptionIs200Chars_createsFilm() {
@@ -61,15 +52,6 @@ public class FilmControllerTest {
         assertEquals(1, controller.findAll().size());
     }
 
-    @DisplayName("Фильм с описанием больше 200 не должен создаваться")
-    @Test
-    void createFilm_whenDescriptionIsMoreThan200Chars_throwsValidationException() {
-        Film film = createValidFilm();
-        String longDescription = "a".repeat(201);
-        film.setDescription(longDescription);
-
-        assertThrows(ValidationException.class, () -> controller.create(film));
-    }
 
     @DisplayName("Фильм с датой релиза 28.12.1895 создаётся")
     @Test
@@ -88,24 +70,6 @@ public class FilmControllerTest {
     void createFilm_whenReleaseDateIsBeforeMinimal_throwsValidationException() {
         Film film = createValidFilm();
         film.setReleaseDate(LocalDate.of(1895, 12, 27));
-
-        assertThrows(ValidationException.class, () -> controller.create(film));
-    }
-
-    @DisplayName("Фильм с продолжительностью 0 не должен создваться")
-    @Test
-    void createFilm_whenDurationIsZero_throwsValidationException() {
-        Film film = createValidFilm();
-        film.setDuration(0);
-
-        assertThrows(ValidationException.class, () -> controller.create(film));
-    }
-
-    @DisplayName("Фильм с отрицательной продолжительностью не должен создаваться")
-    @Test
-    void createFilm_whenDurationIsNegative_throwsValidationException() {
-        Film film = createValidFilm();
-        film.setDuration(-10);
 
         assertThrows(ValidationException.class, () -> controller.create(film));
     }

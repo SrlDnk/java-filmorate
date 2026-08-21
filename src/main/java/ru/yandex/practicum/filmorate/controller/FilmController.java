@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -15,7 +16,6 @@ import java.util.Map;
 @Slf4j
 public class FilmController {
     private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
-    private static final int MAX_DESCRIPTION_LENGTH = 200;
 
     private final Map<Long, Film> films = new HashMap<>();
 
@@ -25,7 +25,7 @@ public class FilmController {
     }
 
     @PostMapping
-    public Film create(@RequestBody Film film) {
+    public Film create(@Valid @RequestBody Film film) {
         validate(film);
         film.setId(getNextId());
         films.put(film.getId(), film);
@@ -34,7 +34,7 @@ public class FilmController {
     }
 
     @PutMapping
-    public Film update(@RequestBody Film newFilm) {
+    public Film update(@Valid @RequestBody Film newFilm) {
         if (newFilm.getId() == null) {
             log.warn("Ошибка валидации - id обновляемого фильма пуст");
             throw new ValidationException("Id фильма должен быть указан");
@@ -59,21 +59,9 @@ public class FilmController {
     }
 
     private void validate(Film film) {
-        if (film.getName() == null || film.getName().isBlank()) {
-            log.warn("Ошибка валидации - пустое название фильма");
-            throw new ValidationException("Название не может быть пустым");
-        }
-        if (film.getDescription() != null && film.getDescription().length() > MAX_DESCRIPTION_LENGTH) {
-            log.warn("Ошибка валидации - длина описания больше 200 символов");
-            throw new ValidationException("Длина описания не может превышать 200 символов");
-        }
         if (film.getReleaseDate() == null || film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
             log.warn("Ошибка валидации - фильм не мог быть выпущен раньше 28 декабря 1895 года");
             throw new ValidationException("Фильм не мог выйти раньше 28.12.1895");
-        }
-        if (film.getDuration() <= 0) {
-            log.warn("Ошибка валидации - фильм не может идти меньше минуты");
-            throw new ValidationException("Фильм не может идти меньше одной минуты");
         }
     }
 }

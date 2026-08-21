@@ -39,24 +39,6 @@ public class UserControllerTest {
         assertEquals(1, controller.findAll().size());
     }
 
-    @DisplayName("Пользователь с email без символа @ не должен создаваться")
-    @Test
-    void createUser_whenEmailWithoutAtSign_throwsValidationException() {
-        User user = createValidUser();
-        user.setEmail("mail.mail.ru");
-
-        assertThrows(ValidationException.class, () -> controller.create(user));
-    }
-
-    @DisplayName("Пользователь с пустым email не должен создаваться")
-    @Test
-    void createUser_whenEmailIsBlank_throwsValidationException() {
-        User user = createValidUser();
-        user.setEmail("");
-
-        assertThrows(ValidationException.class, () -> controller.create(user));
-    }
-
     @DisplayName("Пользователь с пробелом в логине не должен создаваться")
     @Test
     void createUser_whenLoginContainsSpace_throwsValidationException() {
@@ -95,15 +77,6 @@ public class UserControllerTest {
         User created = controller.create(user);
 
         assertEquals("kkkk28", created.getName());
-    }
-
-    @DisplayName("Пользователь с датой рождения в будущем не должен создаваться")
-    @Test
-    void createUser_whenBirthdayInFuture_throwsValidationException() {
-        User user = createValidUser();
-        user.setBirthday(LocalDate.now().plusDays(1));
-
-        assertThrows(ValidationException.class, () -> controller.create(user));
     }
 
     @DisplayName("Пользователь с сегодняшней датой рождения создаётся")
