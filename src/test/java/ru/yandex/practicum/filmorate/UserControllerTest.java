@@ -4,10 +4,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.UserController;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
+import java.util.Collection;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,7 +21,9 @@ public class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new UserController();
+        UserStorage userStorage = new InMemoryUserStorage();
+        UserService userService = new UserService(userStorage);
+        controller = new UserController(userStorage, userService);
     }
 
     private User createValidUser() {
@@ -92,12 +99,67 @@ public class UserControllerTest {
 
     @DisplayName("Пользователь с несуществующим id не должен обновляться")
     @Test
-    void updateUser_whenIdNotFound_throwsValidationException() {
+    void updateUser_whenIdNotFound_throwsNotFoundException() {
         User user = createValidUser();
         controller.create(user);
         User newUser = createValidUser();
         newUser.setId(999L);
 
-        assertThrows(ValidationException.class, () -> controller.update(newUser));
+        assertThrows(NotFoundException.class, () -> controller.update(newUser));
+    }
+
+    @DisplayName("Добавление в друзья должно работать взаимно")
+    @Test
+    void addFriend_addsBothWays() {
+        User user = controller.create(createValidUser());
+        User friend = createValidUser();
+        friend.setEmail("22eg@mail.ru");
+        friend.setLogin("222222");
+        User createdFriend = controller.create(friend);
+
+        controller.addFriend(user.getId(), createdFriend.getId());
+
+        assertTrue(user.getFriends().contains(createdFriend.getId()));
+        assertTrue(createdFriend.getFriends().contains(user.getId()));
+    }
+
+    @DisplayName("Удаление из друзей должно работать взаимно")
+    @Test
+    void removeFriend_removesBothWays() {
+        User user = controller.create(createValidUser());
+        User friend = createValidUser();
+        friend.setEmail("22eg@mail.ru");
+        friend.setLogin("222222");
+        User createdFriend = controller.create(friend);
+
+        controller.addFriend(user.getId(), createdFriend.getId());
+        controller.removeFriend(user.getId(), createdFriend.getId());
+
+        assertFalse(user.getFriends().contains(createdFriend.getId()));
+        assertFalse(createdFriend.getFriends().contains(user.getId()));
+    }
+
+    @DisplayName("Общие друзья должны определятся корректно")
+    @Test
+    void getCommonFriends_returnsCommon() {
+        User user = controller.create(createValidUser());
+
+        User otherUser = createValidUser();
+        otherUser.setEmail("other@other.com");
+        otherUser.setLogin("other");
+        User createdOtherUser = controller.create(otherUser);
+
+        User commonUser = createValidUser();
+        commonUser.setEmail("common@common.com");
+        commonUser.setLogin("common");
+        User createdCommonUser = controller.create(commonUser);
+
+        controller.addFriend(user.getId(), createdCommonUser.getId());
+        controller.addFriend(createdOtherUser.getId(), createdCommonUser.getId());
+
+        Collection<User> common = controller.getCommonFriends(user.getId(), createdOtherUser.getId());
+
+        assertEquals(1, common.size());
+        assertTrue(common.contains(createdCommonUser));
     }
 }
