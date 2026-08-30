@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
@@ -108,19 +109,35 @@ public class UserControllerTest {
         assertThrows(NotFoundException.class, () -> controller.update(newUser));
     }
 
-    @DisplayName("Добавление в друзья должно работать взаимно")
+    @DisplayName("Заявка в друзья должна быть неподтвержденной у отправителя")
     @Test
-    void addFriend_addsBothWays() {
+    void addFriend_whenNoRequestBack_createsUnconfirmed() {
         User user = controller.create(createValidUser());
         User friend = createValidUser();
-        friend.setEmail("22eg@mail.ru");
-        friend.setLogin("222222");
+        friend.setEmail("srl@mail.ru");
+        friend.setLogin("srl");
         User createdFriend = controller.create(friend);
 
         controller.addFriend(user.getId(), createdFriend.getId());
 
-        assertTrue(user.getFriends().contains(createdFriend.getId()));
-        assertTrue(createdFriend.getFriends().contains(user.getId()));
+        assertEquals(FriendshipStatus.UNCONFIRMED, user.getFriends().get(createdFriend.getId()));
+        assertFalse(createdFriend.getFriends().containsKey(user.getId()));
+    }
+
+    @DisplayName("Заявка в друзья должна быть подтвержденной у обоих")
+    @Test
+    void addFriend_whenRequestBack_createsConfirmed() {
+        User user = controller.create(createValidUser());
+        User friend = createValidUser();
+        friend.setEmail("srl@mail.ru");
+        friend.setLogin("srl");
+        User createdFriend = controller.create(friend);
+
+        controller.addFriend(user.getId(), createdFriend.getId());
+        controller.addFriend(createdFriend.getId(), user.getId());
+
+        assertEquals(FriendshipStatus.CONFIRMED, user.getFriends().get(createdFriend.getId()));
+        assertEquals(FriendshipStatus.CONFIRMED, createdFriend.getFriends().get(user.getId()));
     }
 
     @DisplayName("Удаление из друзей должно работать взаимно")
@@ -135,8 +152,8 @@ public class UserControllerTest {
         controller.addFriend(user.getId(), createdFriend.getId());
         controller.removeFriend(user.getId(), createdFriend.getId());
 
-        assertFalse(user.getFriends().contains(createdFriend.getId()));
-        assertFalse(createdFriend.getFriends().contains(user.getId()));
+        assertFalse(user.getFriends().containsKey(createdFriend.getId()));
+        assertFalse(createdFriend.getFriends().containsKey(user.getId()));
     }
 
     @DisplayName("Общие друзья должны определятся корректно")

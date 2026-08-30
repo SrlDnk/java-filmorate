@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -23,8 +24,12 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
         User friend = userStorage.findById(friendId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + friendId + " не найден"));
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        if (friend.getFriends().containsKey(userId)) {
+            user.getFriends().put(friendId, FriendshipStatus.CONFIRMED);
+            friend.getFriends().put(userId, FriendshipStatus.CONFIRMED);
+        } else {
+            user.getFriends().put(friendId, FriendshipStatus.UNCONFIRMED);
+        }
     }
 
     public void removeFriend(Long userId, Long friendId) {
@@ -39,7 +44,7 @@ public class UserService {
     public Collection<User> getFriends(Long userId) {
         User user = userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
-        return user.getFriends().stream()
+        return user.getFriends().keySet().stream()
                 .map(id -> userStorage.findById(id).orElseThrow())
                 .toList();
     }
@@ -49,8 +54,8 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
         User otherUser = userStorage.findById(otherId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + otherId + " не найден"));
-        Set<Long> otherFriends = otherUser.getFriends();
-        return user.getFriends().stream()
+        Set<Long> otherFriends = otherUser.getFriends().keySet();
+        return user.getFriends().keySet().stream()
                 .filter(otherFriends::contains)
                 .map(id -> userStorage.findById(id).orElseThrow())
                 .toList();
