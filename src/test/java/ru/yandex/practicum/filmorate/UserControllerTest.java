@@ -140,9 +140,9 @@ public class UserControllerTest {
         assertEquals(FriendshipStatus.CONFIRMED, createdFriend.getFriends().get(user.getId()));
     }
 
-    @DisplayName("Удаление из друзей должно работать взаимно")
+    @DisplayName("Удаление из друзей должно быть только у одного из пользователей")
     @Test
-    void removeFriend_removesBothWays() {
+    void removeFriend_removesOnlyOneWay() {
         User user = controller.create(createValidUser());
         User friend = createValidUser();
         friend.setEmail("22eg@mail.ru");
@@ -150,10 +150,12 @@ public class UserControllerTest {
         User createdFriend = controller.create(friend);
 
         controller.addFriend(user.getId(), createdFriend.getId());
+        controller.addFriend(createdFriend.getId(), user.getId());
         controller.removeFriend(user.getId(), createdFriend.getId());
 
         assertFalse(user.getFriends().containsKey(createdFriend.getId()));
-        assertFalse(createdFriend.getFriends().containsKey(user.getId()));
+        assertTrue(createdFriend.getFriends().containsKey(user.getId()));
+        assertEquals(FriendshipStatus.UNCONFIRMED, createdFriend.getFriends().get(user.getId()));
     }
 
     @DisplayName("Общие друзья должны определятся корректно")

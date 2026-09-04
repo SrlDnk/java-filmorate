@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.controller;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -22,7 +23,7 @@ public class FilmController {
     private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
 
     @Autowired
-    public FilmController(FilmStorage filmStorage, FilmService filmService) {
+    public FilmController(@Qualifier("filmDbStorage") FilmStorage filmStorage, FilmService filmService) {
         this.filmStorage = filmStorage;
         this.filmService = filmService;
     }
@@ -47,7 +48,7 @@ public class FilmController {
     @PostMapping
     public Film create(@Valid @RequestBody Film film) {
         validate(film);
-        Film created = filmStorage.create(film);
+        Film created = filmService.create(film);
         log.info("Фильм id = {}, name = {} успешно добавлен", created.getId(), created.getName());
         return created;
     }
@@ -62,7 +63,7 @@ public class FilmController {
         filmStorage.findById(newFilm.getId())
                 .orElseThrow(() -> new NotFoundException("Фильм с id " + newFilm.getId() + " не найден"));
         log.info("Фильм id {}, name {} - был обновлен", newFilm.getId(), newFilm.getName());
-        return filmStorage.update(newFilm);
+        return filmService.update(newFilm);
     }
 
     @PutMapping("/{id}/like/{userId}")
