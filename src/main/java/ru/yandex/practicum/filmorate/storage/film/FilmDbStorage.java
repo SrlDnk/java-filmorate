@@ -139,11 +139,14 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private void saveGenres(Film film) {
-        if (film.getGenres() == null) {
+        if (film.getGenres() == null || film.getGenres().isEmpty()) {
             return;
         }
-        for (Genre genre : film.getGenres()) {
-            jdbc.update(ADD_GENRE_QUERY, film.getId(), genre.getId());
-        }
+        List<Genre> genres = new ArrayList<>(film.getGenres());
+        jdbc.batchUpdate(ADD_GENRE_QUERY, genres, genres.size(),
+                (ps, genre) -> {
+                    ps.setLong(1, film.getId());
+                    ps.setInt(2, genre.getId());
+                });
     }
 }

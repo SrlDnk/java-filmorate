@@ -12,6 +12,8 @@ import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class FilmService {
@@ -65,10 +67,16 @@ public class FilmService {
             mpaStorage.findById(film.getMpa().getId())
                     .orElseThrow(() -> new NotFoundException("Рейтинг с id " + film.getMpa().getId() + " не найден"));
         }
-        if (film.getGenres() != null) {
-            for (Genre genre : film.getGenres()) {
-                genreStorage.findById(genre.getId())
-                        .orElseThrow(() -> new NotFoundException("Жанр с id " + genre.getId() + " не найден"));
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            Set<Integer> requestedIds = film.getGenres().stream()
+                    .map(Genre::getId)
+                    .collect(Collectors.toSet());
+            Set<Integer> foundIds = genreStorage.findAllByIds(requestedIds).stream()
+                    .map(Genre::getId)
+                    .collect(Collectors.toSet());
+            requestedIds.removeAll(foundIds);
+            if (!requestedIds.isEmpty()) {
+                throw new NotFoundException("Жанр с id " + requestedIds.iterator().next() + " не найден");
             }
         }
     }
